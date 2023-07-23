@@ -1,34 +1,44 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Server components lol?! 🙃
 
-## Getting Started
+## `useRouter`, `createContext` etc. can only be used in client components
 
-First, run the development server:
+`useRouter`, `useSearchParams` and `createContext` can only be used in client
+components. Currently we're wrapping everything in a `RoutingContext`, and
+using it to pass down path params, search params and the navigate function,
+which all come from those hooks. All of those things can only be done in a
+client component. So the Page component would have to be a client component.
+Which means its children, i.e. everything, would have to be client components.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-```
+## Can't pass functions from server to client component
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The boundary between server components and client components is also the
+network boundary. That means that anything you pass down as a prop from a
+server component to a client component has to be serializable. Functions are
+not serializable. (See here: [passing-props]) That means that you can't, e.g.,
+pass the `useRouter` or `useSearchParams` or any other hook down into a client
+component from a server component as a prop. So since they can only be used in
+client components, you would have to pass them down from a client component,
+which means you would have to make the Page component, and hence everything, a
+client component.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+This also goes for passing e.g. the Next.js `Link` component down - you can
+pass it OK from a server to a server component, but not from a server to a
+client component.
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+## You can of course just use them in the normal way
 
-## Learn More
+You can of course just declare a component in your Next.js app to be a
+client component, and then call the `useRouter` or `useSearchParams` hook
+directly, the way you're supposed to. But to do that, your components have
+to be part of the Next.js app in order to be able to import the hooks.
 
-To learn more about Next.js, take a look at the following resources:
+## Also... shallow routing doesn't work right now
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Check this comment on this GitHub
+thread: https://github.com/vercel/next.js/discussions/48110#discussioncomment-6481618
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+Lots of people complaining that shallow routing doesn't work, and then
+someone from Vercel acknowledging the issue and saying they "won't be able
+to get around to it for a bit" as they're focussing on other things.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+[passing-props]: https://nextjs.org/docs/getting-started/react-essentials#passing-props-from-server-to-client-components-serialization
